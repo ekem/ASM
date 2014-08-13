@@ -1,110 +1,61 @@
      1                                  	section .data
      2 00000000 11EA2D819997713D        eps:		dq 1.0E-12
-     3 00000008 0000000000002640        var1:		dq 11.00
+     3 00000008 0000000000001440        var1:		dq 5.00
      4 00000010 000000000000F03F        result:		dq 1.0
      5 00000018 25640A00                fmt_result:	db "%d",`\n`,0
-     6 0000001C 25650A00                fmt_r2:		db "%e",`\n`,0
+     6 0000001C 25660A00                fmt_r2:		db "%f",`\n`,0
      7                                  
      8                                  	section .text
      9                                  	global main
     10                                  	extern printf, scanf
     11                                  
-    12                                  do_e:
+    12                                  factorial:
     13 00000000 55                      	push ebp
     14 00000001 89E5                    	mov ebp, esp
     15 00000003 83EC08                  	sub esp, 8
-    16                                  
-    17 00000006 D9E8                    	fld1
-    18 00000008 6A0B                    	push 11
-    19 0000000A E824000000              	call factorial
-    20 0000000F 83C404                  	add esp, 4
-    21                                  
-    22 00000012 50                      	push eax
-    23 00000013 DB0424                  	fild dword [esp]
-    24 00000016 58                      	pop eax
-    25                                  
-    26 00000017 DEF9                    	fdiv
-    27 00000019 DD55F8                  	fst qword [ebp-8]
-    28                                  
-    29 0000001C FF75FC                  	push dword [ebp-4]
-    30 0000001F FF75F8                  	push dword [ebp-8]
-    31 00000022 68[1C000000]            	push fmt_r2
-    32 00000027 E8(00000000)            	call printf
-    33                                  
-    34 0000002C 83C410                  	add esp, 16
-    35                                  
-    36 0000002F 89EC                    	mov esp, ebp
-    37 00000031 5D                      	pop ebp
-    38 00000032 C3                      	ret
-    39                                  
-    40                                  factorial:
-    41 00000033 55                      	push ebp
-    42 00000034 89E5                    	mov ebp, esp
-    43 00000036 83EC08                  	sub esp, 8
-    44                                  	;push dword [ebp+12]
-    45                                  	;push dword [ebp+8]
-    46                                  	;push fmt_r2
-    47                                  	;call printf
-    48                                  	;add esp, 12
-    49 00000039 8B7508                  	mov esi, [ebp+8]
-    50 0000003C DD06                    	fld qword [esi]
-    51                                  	;mov eax, [ebp+8]	;place n in reg
-    52 0000003E D9EE                    	fldz
-    53 00000040 DFF1                    	fcomip
-    54                                  	;ftst
-    55                                  	;fstsw ax
-    56                                  	;fwait
-    57                                  	;sahf
-    58 00000042 7204                    	jb .pass
-    59                                  	;cmp eax, 0		;check for 0
-    60                                  	;jg .pass		;if greater than, pass
-    61 00000044 D9E8                    	fld1
-    62                                  	;mov eax, 1		;return condition to first seed if equal or less
-    63 00000046 EB2C                    	jmp .return		;short circuit to return
-    64                                  .pass:
-    65 00000048 D9E8                    	fld1
-    66 0000004A DEE9                    	fsub
-    67 0000004C DD5DF8                  	fstp qword [ebp-8]
-    68 0000004F FF75FC                  	push dword [ebp-4]
-    69 00000052 FF75F8                  	push dword [ebp-8]
-    70 00000055 68[1C000000]            	push fmt_r2
-    71 0000005A E8(00000000)            	call printf
-    72 0000005F 83C40C                  	add esp, 12
-    73 00000062 8B75F8                  	mov esi, dword [ebp-8]
-    74                                  	;dec eax			;set eax to n-1
-    75 00000065 FF36                    	push dword [esi]
-    76                                  	;push eax		;push to stack
-    77 00000067 E8C7FFFFFF              	call factorial		;find factor of n-1
-    78 0000006C 83C404                  	add esp, 4		;adjust stack
-    79                                  	;add esp, 4		;adjust stack
-    80 0000006F DD4508                  	fld qword [ebp+8]
-    81 00000072 DEC9                    	fmul
-    82                                  	;mov ebx, [ebp+8]	;restore n to ebx
-    83                                  	;mul ebx			;mul ebx by eax for n*!(n-1)
-    84                                  .return:
-    85 00000074 89EC                    	mov esp, ebp
-    86 00000076 5D                      	pop ebp
-    87 00000077 C3                      	ret
-    88                                  main:
-    89 00000078 9BDBE3                  	finit
-    90 0000007B 68[08000000]            	push var1
-    91 00000080 E8AEFFFFFF              	call factorial
-    92 00000085 83C404                  	add esp, 4
-    93                                  
-    94                                  	;push fmt_r2
-    95                                  	;call printf
-    96                                  	;add esp, 12
-    97                                  
-    98                                  	;push 12
-    99                                  	;call factorial
-   100                                  	;add esp, 4
-   101                                  
-   102                                  	;push eax
-   103                                  	;push fmt_result
-   104                                  	;call printf
-   105                                  	;add esp, 8
-   106                                  
-   107                                  .quit:
-   108 00000088 BB00000000              	mov ebx, 0
-   109 0000008D B801000000              	mov eax, 1
-   110 00000092 CD80                    	int 0x80
+    16 00000006 DD4508                  	fld qword [ebp+8]
+    17 00000009 D9EE                    	fldz
+    18 0000000B DFF1                    	fcomip
+    19 0000000D 7204                    	jb .pass
+    20 0000000F D9E8                    	fld1
+    21 00000011 EB1A                    	jmp .return		;short circuit to return
+    22                                  .pass:
+    23 00000013 D9E8                    	fld1
+    24 00000015 DEE9                    	fsub
+    25 00000017 DD5DF8                  	fstp qword [ebp-8]
+    26                                  
+    27                                  	;push dword [ebp-4]
+    28                                  	;push dword [ebp-8]
+    29                                  	;push fmt_r2
+    30                                  	;call printf
+    31                                  	;add esp, 12
+    32                                  
+    33 0000001A FF75FC                  	push dword [ebp-4]
+    34 0000001D FF75F8                  	push dword [ebp-8]
+    35 00000020 E8DBFFFFFF              	call factorial		;find factor of n-1
+    36 00000025 83C404                  	add esp, 4		;adjust stack
+    37 00000028 DD4508                  	fld qword [ebp+8]
+    38 0000002B DEC9                    	fmul
+    39                                  .return:
+    40 0000002D 89EC                    	mov esp, ebp
+    41 0000002F 5D                      	pop ebp
+    42 00000030 C3                      	ret
+    43                                  main:
+    44 00000031 9BDBE3                  	finit
+    45                                  
+    46 00000034 FF35[0C000000]          	push dword [var1+4]
+    47 0000003A FF35[08000000]          	push dword [var1]
+    48 00000040 E8BBFFFFFF              	call factorial
+    49 00000045 83C408                  	add esp, 8
+    50 00000048 DD1D[08000000]          	fstp qword [var1]
+    51 0000004E FF35[0C000000]          	push dword [var1+4]
+    52 00000054 FF35[08000000]          	push dword [var1]
+    53 0000005A 68[1C000000]            	push fmt_r2
+    54 0000005F E8(00000000)            	call printf
+    55 00000064 83C40C                  	add esp, 12
+    56                                  
+    57                                  
+    58                                  .quit:
+    59 00000067 BB00000000              	mov ebx, 0
+    60 0000006C B801000000              	mov eax, 1
+    61 00000071 CD80                    	int 0x80
