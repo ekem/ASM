@@ -1,0 +1,113 @@
+     1                                  	section .data
+     2 00000000 0000000000000000        a:	dq 0		;value for a
+     3 00000008 0000000000000000        b:	dq 0		;b
+     4 00000010 0000000000000000        c:	dq 0		;c
+     5                                  
+     6 00000018 FFFFFFFFFFFFFFFF        r1:	dq -1		;root 1
+     7 00000020 FFFFFFFFFFFFFFFF        r2:	dq -1		;root 2
+     8                                  
+     9 00000028 456E74657220612C20-     msg_1:	db "Enter a, b, and c",10,"a: ",0
+    10 00000031 622C20616E6420630A-
+    11 0000003A 613A2000           
+    12 0000003E 623A2000                msg_b:	db "b: ",0
+    13 00000042 633A2000                msg_c:	db "c: ",0
+    14                                  
+    15 00000046 256C6600                fmt_a:	db "%lf",0
+    16 0000004A 256C6600                fmt_b:	db "%lf",0
+    17 0000004E 256C6600                fmt_c:	db "%lf",0
+    18                                  
+    19 00000052 726F6F7420313A2025-     fmt_result:	db "root 1: %f",`\n`,"root 2: %f",10,0
+    20 0000005B 660A726F6F7420323A-
+    21 00000064 2025660A00         
+    22 00000069 526573756C74732061-     msg_i:		db "Results are imaginary numbers.",10,0
+    23 00000072 726520696D6167696E-
+    24 0000007B 617279206E756D6265-
+    25 00000084 72732E0A00         
+    26                                  
+    27                                  	section .bss
+    28 00000000 <res 00000008>          result:		resq 1
+    29                                  
+    30                                  	section .text
+    31                                  	global main
+    32                                  	extern printf, scanf
+    33                                  
+    34                                  main:
+    35                                  	;print first message
+    36 00000000 68[28000000]            	push msg_1
+    37 00000005 E8(00000000)            	call printf
+    38 0000000A 83C404                  	add esp, 4
+    39                                  
+    40                                  	;get 'a'
+    41 0000000D 68[00000000]            	push a
+    42 00000012 68[46000000]            	push fmt_a
+    43 00000017 E8(00000000)            	call scanf
+    44 0000001C 83C40C                  	add esp, 12
+    45                                  
+    46                                  	;print 'b' message
+    47 0000001F 68[3E000000]            	push msg_b
+    48 00000024 E8(00000000)            	call printf
+    49 00000029 83C404                  	add esp, 4
+    50                                  
+    51                                  	;get 'b'
+    52 0000002C 68[08000000]            	push b
+    53 00000031 68[4A000000]            	push fmt_b
+    54 00000036 E8(00000000)            	call scanf
+    55 0000003B 83C40C                  	add esp, 12
+    56                                  
+    57                                  	;print 'c' message
+    58 0000003E 68[42000000]            	push msg_c
+    59 00000043 E8(00000000)            	call printf
+    60 00000048 83C404                  	add esp, 4
+    61                                  
+    62                                  	;get 'c'
+    63 0000004B 68[10000000]            	push c
+    64 00000050 68[4E000000]            	push fmt_c
+    65 00000055 E8(00000000)            	call scanf
+    66 0000005A 83C40C                  	add esp, 12
+    67                                  .do_math:
+    68 0000005D 9BDBE3                  	finit			;init fpu
+    69                                  
+    70 00000060 DD05[08000000]          	fld qword [b]		;send b to stack
+    71 00000066 D8C8                    	fmul st0		;multiply st0 by itself
+    72                                  
+    73 00000068 6A04                    	push 4			;push value 4 to stack
+    74 0000006A DB0424                  	fild dword [esp]	;push stack to st0
+    75 0000006D 83C404                  	add esp, 4		;adjust stack
+    76 00000070 DC0D[00000000]          	fmul qword [a]		;4 * a * c
+    77 00000076 DC0D[10000000]          	fmul qword [c]
+    78 0000007C DEE9                    	fsub			;b^2-4ac
+    79 0000007E D9E4                    	ftst			;compare result to 0
+    80 00000080 9BDFE0                  	fstsw ax		;put flags in rx
+    81 00000083 9B                      	fwait			;wait until instruction is finished
+    82 00000084 9E                      	sahf			;copy to cpus flag
+    83 00000085 724F                    	jb .imaginary		;if lower, is negative and imaginary
+    84 00000087 D9FA                    	fsqrt			;positive, so take sqare root
+    85 00000089 DD05[00000000]          	fld qword [a]		;push a to stack
+    86 0000008F D8C0                    	fadd st0		;2*a
+    87 00000091 DD05[08000000]          	fld qword [b]		;push b
+    88 00000097 D9E0                    	fchs			;invert
+    89 00000099 D9C0                    	fld st0			;pust st0 again
+    90 0000009B D8E3                    	fsub st0, st3		;find first root
+    91 0000009D D8F2                    	fdiv st2		;finish	/ 2a
+    92 0000009F DD1D[18000000]          	fstp qword [r1]		;save value
+    93 000000A5 D8C2                    	fadd st2		;find second route
+    94 000000A7 D8F1                    	fdiv st1		;finish /2a
+    95 000000A9 DD15[20000000]          	fst qword [r2]		;save second root
+    96                                  
+    97                                  	;push both roots for printing
+    98 000000AF FF35[1C000000]          	push dword [r1+4]
+    99 000000B5 FF35[18000000]          	push dword [r1]
+   100 000000BB FF35[24000000]          	push dword [r2+4]
+   101 000000C1 FF35[20000000]          	push dword [r2]
+   102 000000C7 68[52000000]            	push fmt_result
+   103 000000CC E8(00000000)            	call printf
+   104 000000D1 83C414                  	add esp, 20
+   105 000000D4 EB0D                    	jmp .quit
+   106                                  .imaginary:			;if the number is imaginary, then print msg_i
+   107 000000D6 68[69000000]            	push msg_i
+   108 000000DB E8(00000000)            	call printf
+   109 000000E0 83C404                  	add esp, 4
+   110                                  .quit:
+   111 000000E3 BB00000000              	mov ebx, 0		;set status
+   112 000000E8 B801000000              	mov eax, 1		;kernel command
+   113 000000ED CD80                    	int 0x80		;interupt

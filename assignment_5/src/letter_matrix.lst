@@ -1,0 +1,146 @@
+     1                                  extern printf, rand, srand
+     2                                  
+     3                                  section .data
+     4 00000000 4900<rept>              char_matrix:	times 16 db 'I',0
+     5 00000020 4145494F5500            vowels:		db 'A','E','I','O','U',0
+     6                                  ;we print only 4 bytes from each address passed to printf
+     7 00000026 252E34730A252E3473-     fmt:		db "%.4s",`\n`,"%.4s",`\n`,"%.4s",`\n`,"%.4s",10,0
+     8 0000002F 0A252E34730A252E34-
+     9 00000038 730A00             
+    10                                  
+    11                                  section .text
+    12                                  	global main
+    13                                  
+    14                                  ;//////////////////////
+    15                                  ;// check_vowel
+    16                                  ;//	check if a char is a vowel, passed on stack
+    17                                  ;//////////////////////
+    18                                  check_vowel:
+    19 00000000 55                      	push ebp
+    20 00000001 89E5                    	mov ebp, esp
+    21 00000003 B801000000              	mov eax, 1		;set fail condition
+    22 00000008 B905000000              	mov ecx, 5		;set to count of vowels
+    23                                  .loop:
+    24 0000000D 8A99[1F000000]          	mov bl, [vowels+ecx-1]	;fill register with a vowel
+    25 00000013 385D08                  	cmp byte [ebp+8], bl	;is the passed value the same
+    26 00000016 7404                    	je .found		;yes, so return
+    27 00000018 E2F3                    	loop .loop		;iterate to next vowel
+    28 0000001A EB05                    	jmp .pass		;nothing found, return a 1
+    29                                  .found:
+    30 0000001C B800000000              	mov eax, 0		;vowel was found, return succeed
+    31                                  .pass:
+    32 00000021 5D                      	pop ebp
+    33 00000022 C3                      	ret
+    34                                  
+    35                                  ;//////////////////////
+    36                                  ;// modulo
+    37                                  ;// 	does modulo, requires two inputs
+    38                                  ;// 	n%x
+    39                                  ;// 	remainder is held in eax
+    40                                  ;//////////////////////
+    41                                  modulo:
+    42 00000023 55                      	push ebp
+    43 00000024 89E5                    	mov ebp, esp
+    44 00000026 8B4508                  	mov eax, [ebp+8]	;n
+    45 00000029 8B4D0C                  	mov ecx, [ebp+12]	;x
+    46 0000002C 29D2                    	sub edx, edx		;clear edx for math
+    47 0000002E F7F1                    	div ecx			;do division
+    48 00000030 89D0                    	mov eax, edx		;place remainder in eax to return
+    49 00000032 5D                      	pop ebp
+    50 00000033 C3                      	ret
+    51                                  
+    52                                  ;//////////////////////
+    53                                  ;// do_rand
+    54                                  ;//	generate a random number and limit it to a range within
+    55                                  ;//	modulo
+    56                                  ;//////////////////////
+    57                                  do_rand:
+    58 00000034 55                      	push ebp
+    59 00000035 89E5                    	mov ebp, esp
+    60 00000037 E8(00000000)            	call rand		;call rand
+    61 0000003C FF7508                  	push dword [ebp+8]	;supply upper limit
+    62 0000003F 51                      	push ecx		;rand return
+    63 00000040 E8DEFFFFFF              	call modulo		;returns results in eax
+    64 00000045 83C408                  	add esp, 8
+    65                                  
+    66 00000048 5D                      	pop ebp
+    67 00000049 C3                      	ret			;eax holds results
+    68                                  
+    69                                  ;//////////////////////
+    70                                  ;// gen_char_matrix
+    71                                  ;//	generate a matrix of chars, 16 long, or 4*4
+    72                                  ;//////////////////////
+    73                                  gen_char_matrix:
+    74                                  	;seed random
+    75 0000004A 54                      	push esp	;seed
+    76 0000004B E8(00000000)            	call srand	;seed randon
+    77 00000050 83C404                  	add esp, 4
+    78                                  
+    79 00000053 BBFFFFFFFF              	mov ebx, -1	;starting place
+    80                                  .loop_row:
+    81 00000058 43                      	inc ebx		;increment row
+    82 00000059 83FB03                  	cmp ebx, 3	;4 rows?
+    83 0000005C 7F59                    	jg .end		;yes, so end
+    84 0000005E BE00000000              	mov esi, 0	;set col to 0
+    85                                  .loop_col:
+    86 00000063 83FE03                  	cmp esi, 3	;4 cols?
+    87 00000066 7FF0                    	jg .loop_row	;yes go to next row
+    88                                  
+    89                                  	;50% chance to gen a vowel
+    90 00000068 6A02                    	push 2		;limit
+    91 0000006A E8C5FFFFFF              	call do_rand	;eax holds return
+    92 0000006F 83C404                  	add esp, 4
+    93 00000072 83F800                  	cmp eax, 0	;0 vowel, 1 not
+    94 00000075 7402                    	je .vowel
+    95 00000077 EB12                    	jmp .cons
+    96                                  .vowel:	;generate a vowel
+    97                                  	;choose a random vowel
+    98 00000079 6A05                    	push 5			;5 vowels
+    99 0000007B E8B4FFFFFF              	call do_rand		;fill eax
+   100 00000080 83C404                  	add esp, 4		;adjust
+   101 00000083 8A90[20000000]          	mov dl, [vowels+eax]	;indirect address vowel
+   102 00000089 EB22                    	jmp .write		;short to write
+   103                                  .cons:	;any letter but a vowel
+   104 0000008B 6A19                    	push 25			;the range of the alphabet
+   105 0000008D E8A2FFFFFF              	call do_rand		;fill eax
+   106 00000092 83C404                  	add esp, 4		;adjust
+   107 00000095 83C041                  	add eax, 65		;place within proper range
+   108 00000098 88C2                    	mov dl, al		;save char
+   109 0000009A 53                      	push ebx		;save ebx
+   110 0000009B 50                      	push eax		;vowel to check
+   111 0000009C E85FFFFFFF              	call check_vowel	;check our vowel, return in eax
+   112 000000A1 83C404                  	add esp, 4
+   113 000000A4 5B                      	pop ebx			;restore ebx
+   114 000000A5 83F801                  	cmp eax, 1		;not a vowel
+   115 000000A8 7403                    	je .write		;pass
+   116 000000AA 80C201                  	add dl, 1		;is a vowel, add 1
+   117                                  .write:
+   118 000000AD 8894B3[00000000]        	mov [char_matrix+ebx+esi*4], dl ;move vowel to matrix
+   119 000000B4 46                      	inc esi			;	;next char
+   120 000000B5 EBAC                    	jmp .loop_col			;iterate column
+   121                                  .end:
+   122 000000B7 C3                      	ret
+   123                                  
+   124                                  print_matrix:
+   125 000000B8 BF[00000000]            	mov edi, char_matrix	;find offset
+   126 000000BD B904000000              	mov ecx, 4		;4 rows
+   127                                  .loop:
+   128 000000C2 57                      	push edi		;push address
+   129 000000C3 83C704                  	add edi, 4		;increment 4 chars
+   130 000000C6 E2FA                    	loop .loop		;next row
+   131                                  
+   132 000000C8 68[26000000]            	push fmt		;push our string fmt
+   133 000000CD E8(00000000)            	call printf		;print string
+   134 000000D2 83C414                  	add esp, 20		;increment stack
+   135 000000D5 C3                      	ret			;return
+   136                                  
+   137                                  exit:
+   138 000000D6 BB00000000              	mov ebx, 0		;success
+   139 000000DB B801000000              	mov eax, 1
+   140 000000E0 CD80                    	int 0x80		;interrupt
+   141 000000E2 C3                      	ret			;return
+   142                                  
+   143                                  main:
+   144 000000E3 E862FFFFFF              	call gen_char_matrix	;generate our matrix
+   145 000000E8 E8CBFFFFFF              	call print_matrix	;print our matrix
+   146 000000ED E8E4FFFFFF              	call exit		;exit with ok

@@ -1,0 +1,162 @@
+     1                                  extern printf
+     2                                  
+     3                                  section .data
+     4 00000000 010203040506070809-     bytea:		db 1,2,3,4,5,6,7,8,9,10,11,12,13,14,16
+     5 00000009 0A0B0C0D0E10       
+     6 0000000F 6400C8002C019001F4-     worda:		dw 100,200,300,400,500,600,700,800,900,100,110,120,130,140,150,160
+     7 00000018 015802BC0220038403-
+     8 00000021 64006E00780082008C-
+     9 0000002A 009600A000         
+    10 0000002F E8030000D0070000B8-     dworda:		dd 1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,10010,10020,10030,10040,10050,10060
+    11 00000038 0B0000A00F00008813-
+    12 00000041 000070170000581B00-
+    13 0000004A 00401F000028230000-
+    14 00000053 102700001A27000024-
+    15 0000005C 2700002E2700003827-
+    16 00000065 0000422700004C2700-
+    17 0000006E 00                 
+    18                                  
+    19 0000006F 256420256420256420-     fmt:		db "%d %d %d %d",`\n`,0
+    20 00000078 25640A00           
+    21 0000007C 25640A00                fmt_result:	db "%d",`\n`,0
+    22                                  
+    23                                  section .text
+    24                                  	global main
+    25                                  ;;
+    26                                  ;; Cast
+    27                                  ;;  takes a type length and pointer to an array element
+    28                                  ;;  fill eax with either a byte, word, or dword passed
+    29                                  ;;
+    30                                  cast:
+    31 00000000 55                      	push ebp
+    32 00000001 89E5                    	mov ebp, esp
+    33 00000003 8B7508                  	mov esi, [ebp+8]		;element pointer
+    34                                  
+    35 00000006 837D0C02                	cmp dword [ebp+12], 2		;2 = word
+    36 0000000A 7C04                    	jl .isbyte			;is 1, so byte
+    37 0000000C 7407                    	je .isword			;is 2, word
+    38 0000000E 7F0A                    	jg .isdword			;is 4, dword
+    39                                  
+    40                                  	;;fill registers and jump to end
+    41                                  .isbyte:
+    42 00000010 0FB606                  	movzx eax, byte [esi]
+    43 00000013 EB09                    	jmp .end
+    44                                  .isword:
+    45 00000015 0FB706                  	movzx eax, word [esi]
+    46 00000018 EB04                    	jmp .end
+    47                                  .isdword:
+    48 0000001A 8B06                    	mov eax, dword [esi]
+    49 0000001C EB00                    	jmp .end
+    50                                  .end:
+    51 0000001E 5D                      	pop ebp
+    52 0000001F C3                      	ret
+    53                                  
+    54                                  ;;
+    55                                  ;; printm
+    56                                  ;;  prints the first 4 elements of the arrays using cast ()
+    57                                  ;;
+    58                                  printm:
+    59 00000020 55                      	push ebp
+    60 00000021 89E5                    	mov ebp, esp
+    61                                  
+    62 00000023 8B7508                  	mov esi, [ebp+8]
+    63 00000026 8B5D0C                  	mov ebx, [ebp+12]	;our segment length
+    64                                  
+    65 00000029 B904000000              	mov ecx, 4
+    66                                  .loop:
+    67 0000002E 53                      	push ebx
+    68 0000002F 56                      	push esi
+    69 00000030 E8CBFFFFFF              	call cast
+    70 00000035 83C408                  	add esp, 8
+    71                                  
+    72 00000038 50                      	push eax
+    73 00000039 01DE                    	add esi, ebx
+    74 0000003B E2F1                    	loop .loop
+    75                                  
+    76 0000003D 68[6F000000]            	push fmt
+    77 00000042 E8(00000000)            	call printf
+    78 00000047 83C414                  	add esp, 20
+    79                                  
+    80 0000004A 5D                      	pop ebp
+    81 0000004B C3                      	ret
+    82                                  
+    83                                  add_row:
+    84 0000004C 55                      	push ebp
+    85 0000004D 89E5                    	mov ebp, esp
+    86 0000004F 83EC04                  	sub esp, 4
+    87 00000052 C745FC00000000          	mov dword [ebp-4], 0
+    88 00000059 8B7508                  	mov esi, [ebp+8]	;element
+    89 0000005C 8B5D0C                  	mov ebx, [ebp+12]	;type
+    90 0000005F B800000000              	mov eax, 0
+    91 00000064 B904000000              	mov ecx, 4		;count
+    92                                  .loop:
+    93 00000069 53                      	push ebx
+    94 0000006A 56                      	push esi
+    95 0000006B E890FFFFFF              	call cast
+    96 00000070 0145FC                  	add dword [ebp-4], eax
+    97 00000073 01DE                    	add esi, ebx
+    98 00000075 E2F2                    	loop .loop
+    99 00000077 8B45FC                  	mov eax, [ebp-4]
+   100 0000007A 89EC                    	mov esp, ebp
+   101 0000007C 5D                      	pop ebp
+   102 0000007D C3                      	ret
+   103                                  
+   104                                  calc_row_sum:
+   105 0000007E 55                      	push ebp
+   106 0000007F 89E5                    	mov ebp, esp
+   107 00000081 8B7508                  	mov esi, [ebp+8]	;array
+   108 00000084 8B450C                  	mov eax, [ebp+12]	;row size
+   109 00000087 F76514                  	mul dword [ebp+20]
+   110 0000008A F76510                  	mul dword [ebp+16]
+   111                                  
+   112 0000008D 01C6                    	add esi, eax
+   113                                  
+   114 0000008F FF7514                  	push dword [ebp+20]
+   115 00000092 56                      	push esi
+   116 00000093 E888FFFFFF              	call printm
+   117 00000098 5E                      	pop esi
+   118 00000099 83C404                  	add esp, 4
+   119                                  	
+   120 0000009C FF7514                  	push dword [ebp+20]
+   121 0000009F 56                      	push esi
+   122 000000A0 E8A7FFFFFF              	call add_row
+   123 000000A5 83C408                  	add esp, 8
+   124                                  
+   125 000000A8 50                      	push eax
+   126 000000A9 68[7C000000]            	push fmt_result
+   127 000000AE E8(00000000)            	call printf
+   128 000000B3 83C408                  	add esp, 8
+   129                                  
+   130 000000B6 5D                      	pop ebp
+   131 000000B7 C3                      	ret
+   132                                  
+   133                                  main:
+   134 000000B8 6A02                    	push 2			;type      20
+   135 000000BA 6A01                    	push 1			;row       16
+   136 000000BC 6A04                    	push 4			;row size  12
+   137 000000BE 68[0F000000]            	push worda		;array     8
+   138 000000C3 E8B6FFFFFF              	call calc_row_sum
+   139 000000C8 83C410                  	add esp, 16
+   140                                  
+   141                                  	;print bytes
+   142 000000CB 6A01                    	push 1
+   143 000000CD 68[00000000]            	push bytea
+   144 000000D2 E849FFFFFF              	call printm
+   145 000000D7 83C408                  	add esp, 8
+   146                                  
+   147                                  	;print words
+   148 000000DA 6A02                    	push 2
+   149 000000DC 68[0F000000]            	push worda
+   150 000000E1 E83AFFFFFF              	call printm
+   151 000000E6 83C408                  	add esp, 8
+   152                                  
+   153                                  	;print words
+   154 000000E9 6A04                    	push 4
+   155 000000EB 68[2F000000]            	push dworda
+   156 000000F0 E82BFFFFFF              	call printm
+   157 000000F5 83C408                  	add esp, 8
+   158                                  
+   159 000000F8 BB00000000              	mov ebx, 0
+   160 000000FD B801000000              	mov eax, 1
+   161 00000102 CD80                    	int 0x80
+   162 00000104 C3                      	ret

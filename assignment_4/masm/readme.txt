@@ -1,0 +1,1 @@
+Needs to be linked to standard c library, see build.bat

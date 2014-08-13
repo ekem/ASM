@@ -1,0 +1,53 @@
+     1                                  	section .data
+     2 00000000 11EA2D819997713D        eps:	dq 1.0E-12
+     3 00000008 000000000000F03F        x:	dq 1.00
+     4 00000010 295C8FC2F528F03F        y:	dq 1.01
+     5                                  
+     6 00000018 457175616C0A00          fmt_equal db "Equal",10,0
+     7 0000001F 58206973206C6F7765-     fmt_less db "X is lower",10,0
+     8 00000028 720A00             
+     9 0000002B 58206973206E6F7420-     fmt_more db "X is not lower",10,0
+    10 00000034 6C6F7765720A00     
+    11                                  
+    12                                  	section .text
+    13                                  	global main
+    14                                  	extern printf		;load printf
+    15                                  equal:
+    16 00000000 B8FFFFFFFF              	mov eax, -1		;set bad return
+    17 00000005 DD05[00000000]          	fld qword [eps]		;push eps to stack
+    18 0000000B DD05[08000000]          	fld qword [x]		;push x to stack
+    19 00000011 DC25[10000000]          	fsub qword [y]		;subtract y
+    20 00000017 D9E1                    	fabs			;take abs(st(0))
+    21 00000019 DBF1                    	fcomi			;compare st(0) to st(1) and set flag
+    22 0000001B 7712                    	ja .notequal		;if st(0) > st(1) then we are over epsilon
+    23 0000001D 68[18000000]            	push fmt_equal		;otherwise we are equal
+    24 00000022 E8(00000000)            	call printf
+    25 00000027 83C404                  	add esp, 4
+    26 0000002A B800000000              	mov eax, 0		;set success return
+    27                                  .notequal:
+    28 0000002F C3                      	ret
+    29                                  
+    30                                  compare:
+    31 00000030 DD05[10000000]          	fld qword [y]		;push our y to stack first
+    32 00000036 DD05[08000000]          	fld qword [x]		;now x is st(0)
+    33 0000003C DBF1                    	fcomi			;st(0) > st(1)
+    34 0000003E 7707                    	ja .larger		;yes, so print more than msg
+    35 00000040 68[1F000000]            	push fmt_less		;no, so print less than
+    36 00000045 EB05                    	jmp .print
+    37                                  .larger:
+    38 00000047 68[2B000000]            	push fmt_more		;more than message
+    39                                  .print:
+    40 0000004C E8(00000000)            	call printf		;print stack
+    41 00000051 83C404                  	add esp, 4
+    42 00000054 C3                      	ret
+    43                                  
+    44                                  main:
+    45 00000055 9BDBE3                  	finit			;initiliaze fpu
+    46 00000058 E8A3FFFFFF              	call equal		;check for equality
+    47 0000005D 83F800                  	cmp eax, 0		;check return, 0 is success
+    48 00000060 7405                    	je .quit		;equal, so exit
+    49 00000062 E8C9FFFFFF              	call compare		;not equal so compare
+    50                                  .quit:
+    51 00000067 BB00000000              	mov ebx, 0
+    52 0000006C B801000000              	mov eax, 1
+    53 00000071 CD80                    	int 0x80

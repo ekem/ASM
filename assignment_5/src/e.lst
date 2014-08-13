@@ -1,0 +1,80 @@
+     1                                  	section .data
+     2 00000000 11EA2D819997713D        eps:		dq 1.0E-12
+     3                                  
+     4 00000008 0000000000000000        result:		dq 0
+     5 00000010 25640A00                fmt_result:	db "%d",`\n`,0
+     6 00000014 25650A00                fmt_r2:		db "%e",`\n`,0
+     7                                  
+     8                                  	section .text
+     9                                  	global main
+    10                                  	extern printf, scanf
+    11                                  
+    12                                  do_e:
+    13 00000000 55                      	push ebp
+    14 00000001 89E5                    	mov ebp, esp
+    15 00000003 83EC08                  	sub esp, 8
+    16                                  
+    17 00000006 D9E8                    	fld1
+    18 00000008 6A0B                    	push 11
+    19 0000000A E824000000              	call factorial
+    20 0000000F 83C404                  	add esp, 4
+    21                                  
+    22 00000012 50                      	push eax
+    23 00000013 DB0424                  	fild dword [esp]
+    24 00000016 58                      	pop eax
+    25                                  
+    26 00000017 DEF9                    	fdiv
+    27 00000019 DD55F8                  	fst qword [ebp-8]
+    28                                  
+    29 0000001C FF75FC                  	push dword [ebp-4]
+    30 0000001F FF75F8                  	push dword [ebp-8]
+    31 00000022 68[14000000]            	push fmt_r2
+    32 00000027 E8(00000000)            	call printf
+    33                                  
+    34 0000002C 83C410                  	add esp, 16
+    35                                  
+    36 0000002F 89EC                    	mov esp, ebp
+    37 00000031 5D                      	pop ebp
+    38 00000032 C3                      	ret
+    39                                  
+    40                                  factorial:
+    41 00000033 55                      	push ebp
+    42 00000034 89E5                    	mov ebp, esp
+    43 00000036 8B4508                  	mov eax, [ebp+8]	;place n in reg
+    44 00000039 83F800                  	cmp eax, 0		;check for 0
+    45 0000003C 7F07                    	jg .pass		;if greater than, pass
+    46 0000003E B801000000              	mov eax, 1		;return condition to first seed if equal or less
+    47 00000043 EB0F                    	jmp .return		;short circuit to return
+    48                                  .pass:
+    49 00000045 48                      	dec eax			;set eax to n-1
+    50 00000046 50                      	push eax		;push to stack
+    51 00000047 E8E7FFFFFF              	call factorial		;find factor of n-1
+    52 0000004C 83C404                  	add esp, 4		;adjust stack
+    53 0000004F 8B5D08                  	mov ebx, [ebp+8]	;restore n to ebx
+    54 00000052 F7E3                    	mul ebx			;mul ebx by eax for n*!(n-1)
+    55                                  .return:
+    56 00000054 5D                      	pop ebp
+    57 00000055 C3                      	ret
+    58                                  main:
+    59 00000056 9BDBE3                  	finit
+    60 00000059 E8A2FFFFFF              	call do_e
+    61                                  
+    62 0000005E FF35[0C000000]          	push dword [result+4]
+    63 00000064 FF35[08000000]          	push dword [result]
+    64 0000006A 68[14000000]            	push fmt_r2
+    65 0000006F E8(00000000)            	call printf
+    66 00000074 83C410                  	add esp, 16
+    67                                  
+    68                                  	;push 12
+    69                                  	;call factorial
+    70                                  	;add esp, 4
+    71                                  
+    72                                  	;push eax
+    73                                  	;push fmt_result
+    74                                  	;call printf
+    75                                  	;add esp, 8
+    76                                  
+    77                                  .quit:
+    78 00000077 BB00000000              	mov ebx, 0
+    79 0000007C B801000000              	mov eax, 1
+    80 00000081 CD80                    	int 0x80
