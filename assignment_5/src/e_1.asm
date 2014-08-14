@@ -1,5 +1,7 @@
 	section .data
-eps:		dq 1.0E-12
+DBL_MAX:	dq 1.7976931348E+308
+E:		dq 2.718281828459045235360287471352662497757247093699959
+eps:		dq 1.0E-13
 var1:		dq 5.00
 result:		dq 1.0
 fmt_result:	db "%d",`\n`,0
@@ -8,6 +10,24 @@ fmt_r2:		db "%f",`\n`,0
 	section .text
 	global main
 	extern printf, scanf
+euclid:
+	push ebp
+	mov ebp, esp
+
+	fld1		;initialize with first seed
+.loop:
+	fld qword [E]
+	fsub st0, st1
+	fld qword [eps]
+	fcomip
+	jb .pass
+	jmp .return
+.pass:
+	
+	loop .loop
+.return:
+	pop ebp
+	ret
 
 factorial:
 	push ebp
@@ -43,16 +63,18 @@ factorial:
 main:
 	finit
 
-	push dword [var1+4]
-	push dword [var1]
-	call factorial
-	add esp, 8
-	fstp qword [var1]
-	push dword [var1+4]
-	push dword [var1]
-	push fmt_r2
-	call printf
-	add esp, 12
+	call euclid
+	;push dword [var1+4]
+	;push dword [var1]
+	;call factorial
+	;add esp, 8
+	;fstp qword [var1]
+
+	;push dword [var1+4]
+	;push dword [var1]
+	;push fmt_r2
+	;call printf
+	;add esp, 12
 
 
 .quit:
